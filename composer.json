@@ -1,0 +1,21 @@
+{
+    "name": "cohesion/cohesion-core",
+    "type": "library",
+    "description": "The Cohesion PHP framework",
+    "keywords": ["framework"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Adric Schreuders",
+            "email": "adric@schreuders.org"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "ext-apc": "*"
+    },
+    "autoload": {
+        "psr-0": { "Cohesion\\": "src/" }
+    }
+}
+
