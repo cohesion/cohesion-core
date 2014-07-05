@@ -15,7 +15,7 @@
         "ext-apc": "*"
     },
     "autoload": {
-        "psr-0": { "Cohesion\\": "src/" }
+        "psr-4": { "Cohesion\\": "src/" }
     }
 }
 
