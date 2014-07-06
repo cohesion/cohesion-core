@@ -42,6 +42,7 @@ class HTTPEnvironment extends Environment {
         }
 
         $global['web_root'] = $_SERVER['DOCUMENT_ROOT'];
+        $global['base_dir'] = dirname($global['web_root']);
 
         $global['uri'] = explode('?', $_SERVER['REQUEST_URI'])[0];
 

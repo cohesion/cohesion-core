@@ -6,3 +6,4 @@ interface TemplateEngine {
 
     public function renderFromFile($templateFileName, $vars);
 }
+

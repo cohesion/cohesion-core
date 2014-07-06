@@ -12,7 +12,8 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "ext-apc": "*"
+        "ext-apc": "*",
+        "mustache/mustache": "~2.5"
     },
     "autoload": {
         "psr-4": { "Cohesion\\": "src/" }

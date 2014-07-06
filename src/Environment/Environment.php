@@ -87,7 +87,11 @@ class Environment {
         if (!$name) {
             return $this->config;
         } else {
-            return $this->config->getConfig($name);
+            $config = $this->config->getConfig($name);
+            if ($name !== 'global') {
+                $config->load($this->config->get('global'), 'global');
+            }
+            return $config;
         }
     }
 

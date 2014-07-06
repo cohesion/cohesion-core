@@ -49,7 +49,7 @@ class ViewFactory extends AbstractFactory {
 
     public static function getTemplateVars() {
         if (!isset(self::$vars)) {
-            self::$vars = self::$environment->get('view.template_vars');
+            self::$vars = self::$environment->get('view.template.vars');
         }
         if (self::$environment->auth()->isLoggedIn()) {
             self::$vars['is_logged_in'] = true;
@@ -61,10 +61,9 @@ class ViewFactory extends AbstractFactory {
 
     public static function getTemplateEngine() {
         if (!isset(self::$engine)) {
-            $templateEngine = self::$environment->get('view.engine');
+            $templateEngine = self::$environment->get('view.template.engine');
             if (class_exists($templateEngine)) {
-                $config = self::$environment->getConfig('global');
-                $config->load(self::$environment->get('view'));
+                $config = self::$environment->getConfig('view');
                 $config->overwrite('directory', $config->get('web_root') . '/' . $config->get('directory'));
                 self::$engine = new $templateEngine($config);
             } else {
@@ -76,7 +75,7 @@ class ViewFactory extends AbstractFactory {
 
     public static function getDefaultTemplate() {
         if (!isset(self::$defaultTemplate)) {
-            self::$defaultTemplate = self::$environment->get('view.default_layout_template');
+            self::$defaultTemplate = self::$environment->get('view.template.default_layout');
         }
         return self::$defaultTemplate;
     }
@@ -97,3 +96,4 @@ class ViewFactory extends AbstractFactory {
 }
 
 class InvalidViewException extends \InvalidClassException {}
+
