@@ -103,7 +103,7 @@ class Config {
             $names = explode('.', $name);
             if ($names) {
                 foreach ($names as $name) {
-                    if (array_key_exists($name, $data)) {
+                    if (is_array($data) && array_key_exists($name, $data)) {
                         $data = $data[$name];
                     } else {
                         return null;
