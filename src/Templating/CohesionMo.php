@@ -74,17 +74,13 @@ class CohesionMo extends Mustache_Engine implements TemplateEngine, Configurable
     }
 
     protected function getSiteUrl($uri) {
-        if ($uri[0] !== DIRECTORY_SEPARATOR) {
+        if ($uri && $uri[0] !== DIRECTORY_SEPARATOR) {
             $uri = DIRECTORY_SEPARATOR . $uri;
         }
         return $this->config->get('global.base_url') . $uri;
     }
 
     protected function getAssetUrl($asset) {
-        if ($asset[0] !== DIRECTORY_SEPARATOR) {
-            $asset = DIRECTORY_SEPARATOR . $asset;
-        }
-
         $cdns = $this->config->get('cdn.hosts');
         if (!$cdns) {
             return $this->getSiteUrl($asset);
@@ -92,6 +88,14 @@ class CohesionMo extends Mustache_Engine implements TemplateEngine, Configurable
             $cdn = $cdns[0];
         } else {
             $cdn = $cdns[crc32($asset) % count($cdns)];
+        }
+
+        if (!$asset) {
+            return $cdn . DIRECTORY_SEPARATOR;
+        }
+
+        if ($asset[0] !== DIRECTORY_SEPARATOR) {
+            $asset = DIRECTORY_SEPARATOR . $asset;
         }
 
         $version = '';
