@@ -17,6 +17,18 @@ class Elasticsearch implements Configurable {
         $this->config = $config;
     }
 
+    public function get($type, $id) {
+        $params = array(
+            'index' => $this->config->get('index'),
+            'type' => $type,
+            'id' => $id,
+            '_source' => true
+        );
+        $client = $this->getClient();
+        $result = $client->get($params);
+        return $result;
+    }
+
     public function insert($type, $id, $objVars) {
         $params = array(
             'index' => $this->config->get('index'),
