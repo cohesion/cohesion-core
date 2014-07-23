@@ -1,7 +1,10 @@
 <?php
 namespace Cohesion\Auth;
 
-use \Cohesion\Util\External\Facebook;
+use \Cohesion\Config\Config;
+use \Cohesion\Structure\Factory\ServiceFactory;
+use \Cohesion\Util\External\Facebook\Facebook;
+use \Cohesion\Util\Input;
 
 class FacebookAuth extends HTTPAuth {
 
@@ -10,6 +13,8 @@ class FacebookAuth extends HTTPAuth {
     protected $permissions;
     protected $redirectUrl;
     protected $siteName;
+    protected $config;
+    protected $userService;
 
     public $token = false;
 
@@ -20,15 +25,18 @@ class FacebookAuth extends HTTPAuth {
         $this->permissions = $config->get('application.facebook.permissions');
         $this->redirectUrl = $config->get('global.base_url') . $config->get('global.uri');
         $this->siteName = $config->get('global.site_name');
+        $this->config = $config->getConfig('utility.facebook');
+        $userService = ServiceFactory::getService('User');
+        if ($userService) {
+            $this->userService = $userService;
+        } else {
+            throw new AuthException("Unable to login with Facebook as no UserService exists for this system");
+        }
     }
 
     public function login() {
         if ($this->isLoggedIn() && $this->user->getFacebookId()) {
             return true;
-        }
-
-        if (!$this->userService) {
-            throw new AuthException("Unable to login with Facebook as no UserService exists for this system");
         }
 
         $code = $this->input->get('code');
@@ -50,21 +58,23 @@ class FacebookAuth extends HTTPAuth {
 
             $this->token = $params['access_token'];
 
-            $facebook = new Facebook($this->token);
+            $facebook = new Facebook($this->config);
+            $facebook->setToken($this->token);
             $facebookUser = $facebook->getUserDetails();
 
             if ($facebookUser) {
                 $user = $this->userService->getFacebookUser($facebookUser->id);
                 $newUser = false;
-                if (!$user && !$this->$user) {
-                    $this->userService->createFromFacebookUser($facebookUser);
+                if (!$user && !$this->user) {
+                    $user = $this->userService->createFromFacebookUser($facebookUser);
                     $newUser = true;
                 } else if ($this->user) {
                     $this->userService->setFacebookId($this->user->getId(), $facebookUser->id);
                     $this->user->setFacebookId($facebookUser->id);
                     $user = $this->user;
                 }
-                $this->userService->setFacebookToken($user->getId(), $this->token);
+                $this->userService->setUser($user);
+                $this->userService->setFacebookToken($this->token);
                 $this->setUserLoggedIn($user);
                 if ($newUser) {
                     header('Location: /user/signedup');
