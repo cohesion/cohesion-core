@@ -10,19 +10,12 @@ class HTTPAuth extends Auth {
     public function __construct(Input $input) {
         parent::__construct();
         $this->input = $input;
-    }
-
-    public function isLoggedIn() {
-        if ($this->user) {
-            return true;
-        }
         if (isset($_SESSION['user_id']) && isset($_SESSION['auth_hash'])) {
             if ($this->validateAuthHash($_SESSION['user_id'], $_SESSION['auth_hash'])) {
                 $this->user = $this->userService->getUserById($_SESSION['user_id']);
                 return true;
             }
         }
-        return false;
     }
 
     public function login() {
@@ -57,3 +50,4 @@ class HTTPAuth extends Auth {
         $this->user = $user;
     }
 }
+
