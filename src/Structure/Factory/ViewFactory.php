@@ -85,10 +85,7 @@ class ViewFactory extends AbstractFactory {
             $format = self::$environment->getFormatClass();
         }
         $className = self::VIEW_NAMESPACE . self::$environment->get('view.class.prefix') . $format . self::$environment->get('view.class.suffix');
-        if (!class_exists($className)) {
-            throw new InvalidViewException("$className doesn't exist");
-        }
-        if (!is_subclass_of($className, self::VIEW_NAMESPACE . 'DataView')) {
+        if (!class_exists($className) || (!is_subclass_of($className, self::VIEW_NAMESPACE . 'DataView'))) {
             $className = self::VIEW_NAMESPACE . self::$environment->get('view.class.prefix') . self::DEFAULT_DATA_VIEW . self::$environment->get('view.class.suffix');
         }
         return new $className($data);
