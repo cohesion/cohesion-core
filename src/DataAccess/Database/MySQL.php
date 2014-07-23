@@ -116,8 +116,10 @@ class MySQL implements Database, Configurable {
             $matches = array();
             $offset = 0;
             $sqli = '';
+            $bindsx = array(); // Used because bind_param needs references not values
             $bindsi = array();
             $types = '';
+            $count = 0;
             while (preg_match('/{{(.*?)}}/', $sql, $matches, PREG_OFFSET_CAPTURE)) {
                 $varName = $matches[1][0];
                 $varComponents = explode('.', $varName);
@@ -141,7 +143,8 @@ class MySQL implements Database, Configurable {
                 }
                 $sqli .= substr($sql, 0, $matches[0][1]) . '?';
                 $sql = substr($sql, $matches[0][1] + strlen($matches[0][0]));
-                $bindsi[] = &$binds[$matches[1][0]];
+                $bindsx[$count] = $bind; // add to dummy array to contain the values
+                $bindsi[] = &$bindsx[$count]; // Set by reference for the bind_param function
                 if (is_int($bind) || preg_match('/^[1-9]\d*$/', $bind)) {
                     $types .= 'i';
                 } else if (is_double($bind) || is_float($bind) || preg_match('/^(?:[1-9]\d*|0)?\.\d+$/', $bind)) {
@@ -149,6 +152,7 @@ class MySQL implements Database, Configurable {
                 } else {
                     $types .= 's';
                 }
+                $count++;
             }
             $sqli .= $sql;
 
