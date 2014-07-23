@@ -38,10 +38,10 @@ class Elasticsearch implements Configurable {
         );
         $client = $this->getClient();
         $result = $client->index($params);
-        if ($result['ok']) {
-            return true;
-        } else if ($result['error']) {
+        if (isset($result['error'])) {
             throw new ElasticsearchException("Unable to index $type due to Eleasticsearch error: {$result['error']}");
+        } else if ($result) {
+            return true;
         } else {
             throw new ElasticsearchException("Unable to index $type due to an unknown Elesticsearch issue");
         }
