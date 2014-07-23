@@ -1,6 +1,9 @@
 <?php
 namespace Cohesion\Structure;
 
-interface Util {
+use \Cohesion\Config\Configurable;
+use \Cohesion\Config\Config;
+
+interface Util extends Configurable {
     public function __construct(Config $config);
 }
