@@ -14,6 +14,7 @@
         "php": ">=5.4.0",
         "ext-apcu": "*",
         "ext-mysqlnd": "*",
+        "ext-curl": "*",
         "mustache/mustache": "~2.5"
     },
     "autoload": {
