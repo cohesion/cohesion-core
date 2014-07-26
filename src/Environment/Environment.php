@@ -103,6 +103,10 @@ class Environment {
         return $this->input;
     }
 
+    public function setAuth(Auth $auth) {
+        $this->auth = $auth;
+    }
+
     public function auth() {
         return $this->auth;
     }

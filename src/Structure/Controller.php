@@ -5,6 +5,7 @@ use \Cohesion\Config\Configurable;
 use \Cohesion\Config\Config;
 use \Cohesion\Util\Input;
 use \Cohesion\Auth\Auth;
+use \Cohesion\Environment\Environment;
 
 /**
  * The Controllers are the external facing code that access the input variables
@@ -20,10 +21,12 @@ abstract class Controller implements Configurable {
     protected $config;
     protected $input;
     protected $auth;
+    protected $env;
 
-    public function __construct(Config $config, Input $input = null, Auth $auth = null) {
+    public function __construct(Config $config, Input $input = null, Auth $auth = null, Environment $env = null) {
         $this->config = $config;
         $this->input = $input;
         $this->auth = $auth;
+        $this->env = $env;
     }
 }
