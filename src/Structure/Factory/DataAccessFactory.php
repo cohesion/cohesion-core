@@ -30,7 +30,7 @@ class DataAccessFactory extends AbstractFactory {
                 throw new InvalidAccessException("Unknown access type for {$className} constructor parameter '{$param->getName()}'. Make sure DataAccess objects use Type Hints");
             }
             $type = $param->getClass()->getShortName();
-            if (!isset($accesses[$type])) {
+            if (!isset(self::$accesses[$type])) {
                 $typeReflection = new \ReflectionClass($param->getClass()->getName());
                 if ($typeReflection->isSubclassOf('\Cohesion\Structure\DAO')) {
                     $access = self::createDataAccess($type);
@@ -61,9 +61,9 @@ class DataAccessFactory extends AbstractFactory {
                         throw new InvalidAccessException("Unable to construct $driver as it does not take a Config object");
                     }
                 }
-                $accesses[$type] = $access;
+                self::$accesses[$type] = $access;
             }
-            $values[$i] = $accesses[$type];
+            $values[$i] = self::$accesses[$type];
         }
         return $reflection->newInstanceArgs($values);
     }
