@@ -23,4 +23,16 @@ abstract class DAO {
     public function __construct(Database $db) {
         $this->db = $db;
     }
+
+    public function startTransaction() {
+        $this->db->startTransaction();
+    }
+
+    public function commit() {
+        $this->db->commit();
+    }
+
+    public function rollback() {
+        $this->db->rollback();
+    }
 }
