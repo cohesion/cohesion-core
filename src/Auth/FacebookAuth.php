@@ -69,7 +69,7 @@ class FacebookAuth extends HTTPAuth {
                     $user = $this->userService->createFromFacebookUser($facebookUser);
                     $newUser = true;
                 } else if ($this->user) {
-                    $this->userService->setFacebookId($this->user->getId(), $facebookUser->id);
+                    $this->userService->setFacebookId($facebookUser->id);
                     $this->user->setFacebookId($facebookUser->id);
                     $user = $this->user;
                 }
