@@ -49,7 +49,7 @@ class Route implements Configurable {
                     if (method_exists($className, $functionName)) {
                         $params[] = $component;
                     } else {
-                        throw new RouteException("$className doesn't have an $functionName function");
+                        throw new RouteException("$className doesn't have a $functionName function");
                     }
                 }
             } else {
@@ -57,11 +57,16 @@ class Route implements Configurable {
             }
         }
         if (!$functionName) {
-            $functionName = $this->constructFunctionName($this->config->get('function.default'));
-            if ($className == $defaultClassName) {
-                if ($components[0] != '') {
-                    $params = $components;
+            $defaultFunction = $this->constructFunctionName($this->config->get('function.default'));
+            if (method_exists($className, $defaultFunction)) {
+                $functionName = $defaultFunction;
+                if ($className == $defaultClassName) {
+                    if ($components[0] != '') {
+                        $params = $components;
+                    }
                 }
+            } else {
+                throw new RouteException("$className doesn't have an $functionName function");
             }
         }
         $reflection = new \ReflectionMethod($className, $functionName);
