@@ -85,13 +85,13 @@ class Elasticsearch implements Configurable {
             }
         }
         if (!is_array($fieldsToSearch)) {
-            $params['body']['query'] = array(
+            $query = array(
                 'match' => array(
                     $fieldsToSearch => $query
                 )
             );
         } else {
-            $params['body']['query'] = array(
+            $query = array(
                 'multi_match' => array(
                     'query' => $query,
                     'fields' => $fieldsToSearch
@@ -104,6 +104,9 @@ class Elasticsearch implements Configurable {
             } else {
                 $params['body']['query']['filtered']['filter'] = $filters;
             }
+            $params['body']['query']['filtered']['query'] = $query;
+        } else {
+            $params['body']['query'] = $query;
         }
         $client = $this->getClient();
         $result = $client->search($params);
