@@ -1,6 +1,8 @@
 <?php
 namespace Cohesion\Auth;
 
+use \LogicException;
+
 class AdminAuth extends Auth {
     public function __construct() {
         parent::__construct();

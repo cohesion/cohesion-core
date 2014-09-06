@@ -14,19 +14,7 @@ abstract class DataView extends View {
     }
 
     public function setData($data) {
-        if ($data instanceof DTO) {
-            $data = $data->getVars();
-        } else if (is_array($data)) {
-            $newData = array();
-            foreach ($data as $i => $item) {
-                if ($item instanceof DTO) {
-                    $newData[$i] = $item->getVars();
-                } else {
-                    $newData[$i] = $item;
-                }
-            }
-            $data = $newData;
-        }
+        $data = $this->getVars($data);
         $this->addVar('result', $data);
     }
 
@@ -38,6 +26,17 @@ abstract class DataView extends View {
             $vars['errors'] = $this->errors;
         }
         return $vars;
+    }
+
+    private function getVars($data) {
+        if ($data instanceof DTO) {
+            $data = $data->getVars();
+        } else if (is_array($data)) {
+            foreach ($data as $i => $item) {
+                $data[$i] = $this->getVars($item);
+            }
+        }
+        return $data;
     }
 }
 
