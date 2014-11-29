@@ -3,6 +3,7 @@ namespace Cohesion\Util;
 
 use \Cohesion\Config\Config;
 use \Cohesion\Structure\Factory\ViewFactory;
+use \Cohesion\Structure\Util;
 
 class Email implements Util {
 

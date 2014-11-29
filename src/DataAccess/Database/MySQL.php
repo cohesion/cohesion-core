@@ -237,12 +237,3 @@ class MySQL implements Database, Configurable {
         }
     }
 }
-
-class MySQLException extends \DataAccessException {}
-class MySQLInitialisationException extends MySQLException {}
-class MySQLConnectionException extends MySQLException {}
-class MySQLStatementException extends MySQLException {}
-class MySQLQueryException extends MySQLException {}
-class MySQLBindException extends MySQLQueryException {}
-class MySQLExecuteException extends MySQLQueryException {}
-class MySQLTransactionException extends MySQLException {}

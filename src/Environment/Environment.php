@@ -58,25 +58,9 @@ class Environment {
 
         $config->merge('global', $global);
 
-        if (!$this->production) {
-            $cache->delete($config->get('global.autoloader.cache_key'));
-        }
-
-        if (class_exists('Autoloader')) {
-            $autoloader = \Autoloader::getInstance();
-            $autoloader->addClassPath(BASE_DIR . 'core/templating');
-            $autoloader->addClassPath(BASE_DIR . 'src');
-            $autoloader->addClassPath(WEB_ROOT . 'controllers');
-            $autoloader->addClassPath(WEB_ROOT . 'views');
-            $autoloader->setCache($cache);
-            $autoloader->setCacheKey($config->get('global.autoloader.cache_key'));
-            $autoloader->register();
-        }
-
-        RoutingFactory::setEnvironment($this);
-        ViewFactory::setEnvironment($this);
-        ServiceFactory::setEnvironment($this);
-        DataAccessFactory::setEnvironment($this);
+        RoutingFactory::$config = $this->getConfig('routing');
+        ViewFactory::$config = $this->getConfig('view');
+        ViewFactory::$environment = $this;
     }
 
     public function get($var) {

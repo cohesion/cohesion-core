@@ -30,6 +30,3 @@ class APC extends Cache {
         apc_delete($key);
     }
 }
-
-class APCException extends \CacheException {}
-

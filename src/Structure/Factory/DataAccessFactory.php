@@ -1,87 +1,83 @@
 <?php
 namespace Cohesion\Structure\Factory;
 
+use \Cohesion\Config\Config;
+use \ReflectionClass;
+use \InvalidArgumentException;
+
 class DataAccessFactory extends AbstractFactory {
 
-    protected static $accesses;
+    private $config;
+    private $accesses;
+    private $cyclicDependancies;
 
-    public static function createDataAccess($name = null) {
-        // Get DAO class
-        if ($name === null) {
-            $name = self::$environment->get('data_access.class.default');
-            if ($name === null) {
-                throw new \InvalidArgumentException("Data Access name must be provided");
-            }
-        }
-        $prefix = self::$environment->get('data_access.class.prefix');
-        $suffix = self::$environment->get('data_access.class.suffix');
-        $name = preg_replace(["/^$prefix/", "/$suffix$/"], '', $name);
-        $className = $prefix . $name . $suffix;
-        if (!class_exists($className)) {
-            throw new InvalidDataAccessException("$className doesn't exist");
-        }
+    public function __construct(Config $config) {
+        $this->config = $config;
+        $this->accesses = array();
+        $this->cyclicDependancies = array();
+    }
 
-        // Check the class constructor to see what libraries it needs
-        $reflection = new \ReflectionClass($className);
-        $params = self::getConstructor($reflection)->getParameters();
+    public function get($class) {
+        if (isset($this->accesses[$class])) {
+            return $this->accesses[$class];
+        }
+        if (!class_exists($class)) {
+            throw new InvalidClassException("$class doesn't exist");
+        }
+        $reflection = new ReflectionClass($class);
+        $params = $this->getConstructor($reflection)->getParameters();
         $values = array();
         foreach ($params as $i => $param) {
+            unset($value);
             if (!$param->getClass()) {
-                throw new InvalidAccessException("Unknown access type for {$className} constructor parameter '{$param->getName()}'. Make sure DataAccess objects use Type Hints");
+                throw new InvalidClassException("Unknown access type for {$class} constructor parameter '{$param->getName()}'. Make sure DataAccess objects use Type Hints");
             }
             $type = $param->getClass()->getShortName();
-            if (!isset(self::$accesses[$type])) {
-                $typeReflection = new \ReflectionClass($param->getClass()->getName());
-                if ($typeReflection->isSubclassOf('\Cohesion\Structure\DAO')) {
-                    $access = self::createDataAccess($type);
+            if (!isset($this->accesses[$type])) {
+                if ($param->getClass()->isSubclassOf('Cohesion\\Structure\\DAO')) {
+                    if (isset($this->cyclicDependancies[$param->getClass()->getName()])) {
+                        $dependancies = clone $this->cyclicDependancies;
+                        $dependancies[] = $param->getClass()->getName();
+                        $this->cyclicDependancies = array();
+                        throw new CyclicDependancyException('Cyclic dependancy discovered while loading ' . implode(' -> ', $dependancies));
+                    }
+                    $this->cyclicDependancies[$class] = true;
+                    $value = $this->get($param->getClass()->getName());
+                    unset($this->cyclicDependancies[$class]);
                 } else {
-                    $config = self::$environment->getConfig('data_access.' . strtolower($type));
+                    $config = $this->config->getConfig(strtolower($type));
                     if (!$config) {
                         throw new InvalidAccessException("Unknown access type. $type not set in the configuration");
                     }
                     $driver = $config->get('driver');
                     if ($driver) {
-                        $driver = "\Cohesion\DataAccess\\$type\\$driver";
-                        $typeReflection = new \ReflectionClass($driver);
+                        $driver = "\\Cohesion\\DataAccess\\$type\\$driver";
+                        $typeReflection = new ReflectionClass($driver);
                     } else {
                         $driver = $param->getClass()->getName();
-                        if ($typeReflection->isAbstract()) {
+                        $typeReflection = $param->getClass();
+                        if ($param->getClass()->isAbstract()) {
                             throw new InvalidAccessException("No driver found for $type");
                         }
                     }
                     if (!class_exists($driver)) {
                         throw new InvalidAccessException("No class found for $driver driver");
                     }
-                    $accessParams = self::getConstructor($typeReflection)->getParameters();
+                    $accessParams = $this->getConstructor($typeReflection)->getParameters();
                     if (count($accessParams) === 0) {
-                        $access = new $driver();
-                    } else if (count($accessParams) === 1 && $accessParams[0]->getClass()->getShortName() == 'Config') {
-                        $access = new $driver($config);
+                        $value = new $driver();
+                    } else if (count($accessParams === 1 && $accessParams[0]->getClass()->instanceOf('Cohesion\\Config\\Config'))) {
+                        $value = new $driver($config);
                     } else {
-                        throw new InvalidAccessException("Unable to construct $driver as it does not take a Config object");
+                        throw new InvalidAccessException("Unable to construct $driver as it doesn't take a Config object");
                     }
                 }
-                self::$accesses[$type] = $access;
+                $this->accesses[$type] = $value;
             }
-            $values[$i] = self::$accesses[$type];
+            $values[$i] = $this->accesses[$type];
         }
-        return $reflection->newInstanceArgs($values);
-    }
-
-    private static function getConstructor(\ReflectionClass $reflection) {
-        $constructor = $reflection->getConstructor();
-        if ($constructor) {
-            return $constructor;
-        } else {
-            $parent = $reflection->getParentClass();
-            if ($parent) {
-                return self::getConstructor($parent);
-            } else {
-                return null;
-            }
-        }
+        $dao = $reflection->newInstanceArgs($values);
+        $this->accesses[$class] = $dao;
+        return $dao;
     }
 }
-
-class InvalidDataAccessException extends \InvalidClassException {}
-class InvalidAccessException extends \InvalidClassException {}

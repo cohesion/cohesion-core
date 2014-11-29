@@ -143,5 +143,3 @@ class Elasticsearch implements Configurable {
         return $this->config;
     }
 }
-
-class ElasticsearchException extends \DataAccessException {}

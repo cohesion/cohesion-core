@@ -31,10 +31,10 @@ class CohesionMo extends Mustache_Engine implements TemplateEngine, Configurable
                 $templateCache = null;
             }
         }
- 
+
         parent::__construct(array(
             'partials_loader' => new MustacheVariablePartialLoader(
-                $config->get('global.base_dir') . DIRECTORY_SEPARATOR . $config->get('template.directory'), 
+                $config->get('global.base_dir') . DIRECTORY_SEPARATOR . $config->get('template.directory'),
                 array(
                     'extension' => $config->get('template.extension')
                 )
@@ -46,7 +46,7 @@ class CohesionMo extends Mustache_Engine implements TemplateEngine, Configurable
 
     public function renderFromFile($template, $vars = array()) {
         $templateFile = $this->config->get('global.base_dir') . DIRECTORY_SEPARATOR . $this->config->get('template.directory') . DIRECTORY_SEPARATOR . $template;
-        $extension = $this->config->get('template.extension'); 
+        $extension = $this->config->get('template.extension');
         if ($extension) {
             $templateFile .= ".$extension";
         }

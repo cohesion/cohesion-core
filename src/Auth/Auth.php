@@ -2,7 +2,6 @@
 namespace Cohesion\Auth;
 
 use \Cohesion\Structure\Factory\ServiceFactory;
-use \Cohesion\Structure\Factory\InvalidServiceException;
 
 abstract class Auth {
     protected $user;
@@ -10,12 +9,8 @@ abstract class Auth {
 
     const AUTH_HASH_SIZE = 32;
 
-    public function __construct() {
-        try {
-            $this->userService = ServiceFactory::getService('User');
-        } catch (InvalidServiceException $e) {
-            $this->userService = null;
-        }
+    public function __construct(UserServiceInterface $userService) {
+        $this->userService = $userService;
     }
 
     public function isLoggedIn() {
@@ -52,8 +47,3 @@ abstract class Auth {
         return openssl_random_pseudo_bytes(self::AUTH_HASH_SIZE);
     }
 }
-
-class AuthException extends \UserSafeException {}
-class UnauthorisedException extends AuthException {}
-class SessionExpiredException extends AuthException {}
-class UserAlreadyExistsException extends AuthException {}

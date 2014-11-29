@@ -1,5 +1,4 @@
 <?php
-
 namespace Cohesion\Config;
 
 interface Configurable {

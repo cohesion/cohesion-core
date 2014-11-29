@@ -6,6 +6,7 @@ use \Cohesion\Config\Config;
 use \Cohesion\Util\Input;
 use \Cohesion\Auth\Auth;
 use \Cohesion\Environment\Environment;
+use \Cohesion\Structure\Factory\ServiceFactory;
 
 /**
  * The Controllers are the external facing code that access the input variables
@@ -22,11 +23,13 @@ abstract class Controller implements Configurable {
     protected $input;
     protected $auth;
     protected $env;
+    protected $factory;
 
     public function __construct(Config $config, Input $input = null, Auth $auth = null, Environment $env = null) {
         $this->config = $config;
         $this->input = $input;
         $this->auth = $auth;
         $this->env = $env;
+        $this->factory = new ServiceFactory($config, $auth);
     }
 }

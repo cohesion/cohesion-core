@@ -7,15 +7,15 @@ class HTTPAuth extends Auth {
 
     protected $input;
 
-    public function __construct(Input $input) {
-        parent::__construct();
-        $this->input = $input;
+    public function __construct(UserServiceInterface $userService) {
+        parent::__construct($userService);
         if (isset($_SESSION['user_id']) && isset($_SESSION['auth_hash'])) {
             if ($this->validateAuthHash($_SESSION['user_id'], $_SESSION['auth_hash'])) {
                 $this->user = $this->userService->getUserById($_SESSION['user_id']);
                 return true;
             }
         }
+        $this->input = new Input($_REQUEST ?: array());
     }
 
     public function login() {

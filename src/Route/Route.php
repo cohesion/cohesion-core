@@ -27,24 +27,48 @@ class Route implements Configurable {
     }
 
     protected function setByDefaultRoute() {
+        if (preg_match('/\.\./', $this->uri)) {
+            throw new RouteException("Invalid URI {$this->uri}");
+        }
         $components = explode('/', ltrim(preg_replace('/\/+/', '/', $this->uri), '/'));
         $defaultClassName = $this->constructClassName($this->config->get('class.default'));
         $className = $defaultClassName;
         $functionName = null;
         $params = array();
+        $dir = BASE_DIR . $this->config->get('directory') . DIRECTORY_SEPARATOR;
+        $ext = '.' . $this->config->get('extension', 'php');
         foreach ($components as $component) {
             if (!$functionName) {
-                if ($className == $defaultClassName && $component) {
-                    $checkClassName = $this->constructClassName($component);
-                    if (class_exists($checkClassName)) {
-                        $className = $checkClassName;
-                        continue;
+                $directory = $dir . $component;
+                if (file_exists($directory) && is_dir($directory)) {
+                    $dir = $directory . DIRECTORY_SEPARATOR;
+                    continue;
+                }
+                $checkClassName = $this->constructClassName($component);
+                $filePath = $dir . $checkClassName . $ext;
+                if (file_exists($filePath)) {
+                    include_once($filePath);
+                    if (!class_exists($checkClassName)) {
+                        throw new RouteException("$filePath doesn't contain a $checkClassName class");
+                    }
+                    $className = $checkClassName;
+                    continue;
+                } else {
+                    if ($className === $defaultClassName) {
+                        $filePath = $dir . $className . $ext;
+                        if (!file_exists($filePath)) {
+                            throw new RouteException("Default controller $className cannot be found");
+                        }
+                        include_once($filePath);
+                        if (!class_exists($className)) {
+                            throw new RouteException("$filePath doesn't contain a $className class");
+                        }
                     }
                 }
                 $checkFunctionName = $this->constructFunctionName($component);
                 if (method_exists($className, $checkFunctionName)) {
                     $functionName = $checkFunctionName;
-                } else if ($className != $defaultClassName) {
+                } else if ($className !== $defaultClassName) {
                     $functionName = $this->constructFunctionName($this->config->get('function.default'));
                     if (method_exists($className, $functionName)) {
                         $params[] = $component;
@@ -58,6 +82,16 @@ class Route implements Configurable {
         }
         if (!$functionName) {
             $defaultFunction = $this->constructFunctionName($this->config->get('function.default'));
+            if ($className === $defaultClassName) {
+                $filePath = $dir . $className . $ext;
+                if (!file_exists($filePath)) {
+                    throw new RouteException("Default controller $className cannot be found");
+                }
+                include_once($filePath);
+                if (!class_exists($className)) {
+                    throw new RouteException("$filePath doesn't contain a $className class");
+                }
+            }
             if (method_exists($className, $defaultFunction)) {
                 $functionName = $defaultFunction;
                 if ($className == $defaultClassName) {
@@ -66,7 +100,7 @@ class Route implements Configurable {
                     }
                 }
             } else {
-                throw new RouteException("$className doesn't have an $functionName function");
+                throw new RouteException("$className doesn't have an $defaultFunction function");
             }
         }
         $reflection = new \ReflectionMethod($className, $functionName);
@@ -126,7 +160,7 @@ class Route implements Configurable {
         $words = explode('-', $name);
         $name = '';
         if (!$prefix) {
-            $name = ucfirst(array_shift($words));
+            $name = lcfirst(array_shift($words));
         }
         foreach ($words as $word) {
             $name .= ucfirst($word);

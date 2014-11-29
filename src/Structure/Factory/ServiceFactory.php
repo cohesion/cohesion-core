@@ -1,36 +1,99 @@
 <?php
 namespace Cohesion\Structure\Factory;
 
-use \Cohesion\Structure\Service;
+use \Cohesion\Auth\Auth;
+use \Cohesion\Config\Config;
+use \ReflectionClass;
 
 class ServiceFactory extends AbstractFactory {
 
-    public static function getService($name = null) {
-        if ($name === null) {
-            $name = self::$environment->get('application.class.default');
-            if ($name === null) {
-                throw new \InvalidArgumentException("Service name must be provided");
+    private $config;
+    private $auth;
+
+    private $daoFactory;
+    private $services;
+    private $cyclicDependancies;
+
+    public function __construct(Config $config, Auth $auth = null) {
+        $this->config = $config;
+        $this->auth = $auth;
+        $this->daoFactory = new DataAccessFactory($config->getConfig('data_access'));
+        $this->services = array();
+        $this->cyclicDependancies = array();
+    }
+
+    public function get($class) {
+        if (isset($this->services[$class])) {
+            return $this->services[$class];
+        }
+        if (!class_exists($class)) {
+            throw new InvalidClassException("$class doesn't exist");
+        }
+        $reflection = new ReflectionClass($class);
+        $params = $this->getConstructor($reflection)->getParameters();
+        $values = array();
+        foreach ($params as $i => $param) {
+            unset($value);
+            if ($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Config\\Config') {
+                $value = $this->config->getConfig('application');
+            } else if ($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Structure\\DAO') {
+                $value = $this->getServiceDAO($class);
+            } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\DAO')) {
+                $value = $this->daoFactory->get($param->getClass()->getName());
+            } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\Service')) {
+                if (in_array($param->getClass()->getName(), $this->cyclicDependancies)) {
+                    $dependancies = implode(' -> ', $this->cyclicDependancies) . ' -> ' . $param->getClass()->getName();
+                    $this->cyclicDependancies = array();
+                    throw new CyclicDependancyException("Cyclic dependancy discovered while loading $dependancies");
+                }
+                $this->cyclicDependancies[] = $param->getClass()->getName();
+                $value = $this->get($param->getClass()->getName());
+                array_pop($this->cyclicDependancies);
+            } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\Util')) {
+                $utilClass = $param->getClass()->getName();
+                $value = new $utilClass($this->config->getConfig('utility.' . strtolower($param->getClass()->getShortName())));
+            } else if ($this->auth && $param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Auth\\User')) {
+                $value = $this->auth->getUser();
+            } else if ($param->getClass() && $param->getClass()->isInstantiable()) {
+                $constructor = null;
+                try {
+                    $constructor = $this->getConstructor($param->getClass());
+                } catch (InvalidClassException $e) {
+                }
+                if (!$constructor || $constructor->getNumberOfRequiredParameters() == 0) {
+                    $value = $param->getClass()->newInstance();
+                } else if (!$param->isOptional()) {
+                    throw new InvalidPropertyException('Invalid Service property ' . $param->getName() . '. Unable to create instance of ' . $param->getClass->getName());
+                }
+            } else if (!$param->isOptional()) {
+                throw new InvalidPropertyException('Invalid Service property ' . $param->getName());
+            }
+            if (isset($value)) {
+                $values[$i] = $value;
             }
         }
-        $prefix = self::$environment->get('application.class.prefix');
-        $suffix = self::$environment->get('application.class.suffix');
-        $name = preg_replace(["/^$prefix/", "/$suffix$/"], '', $name);
-        $className = $prefix . $name . $suffix;
-        if (!class_exists($className)) {
-            throw new InvalidServiceException("$className doesn't exist");
+        $service = $reflection->newInstanceArgs($values);
+        if ($this->auth) {
+            $service->setUser($this->auth->getUser());
         }
+        $this->services[$class] = $service;
+        return $service;
+    }
 
-        $auth = self::$environment->auth();
-        if ($auth) {
-            $user = $auth->getUser();
-        } else {
-            $user = null;
+    public function setAuth(Auth $auth) {
+        $this->auth = $auth;
+    }
+
+    private function getServiceDAO($serviceClass) {
+        $servicePrefix = $this->config->get('application.class.prefix');
+        $serviceSuffix = $this->config->get('application.class.suffix');
+        $name = preg_replace(["/^$servicePrefix/", "/$serviceSuffix$/"], '', $serviceClass);
+        $daoPrefix = $this->config->get('data_access.class.prefix');
+        $daoSuffix = $this->config->get('data_access.class.suffix');
+        $class = $daoPrefix . $name . $daoSuffix;
+        if (!class_exists($class)) {
+            throw new InvalidClassException("$class does not exist");
         }
-        return new $className(
-            self::$environment->getConfig('application'),
-            $user
-        );
+        return $this->daoFactory->get($class);
     }
 }
-
-class InvalidServiceException extends \InvalidClassException {}

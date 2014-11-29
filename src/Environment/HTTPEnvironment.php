@@ -3,7 +3,8 @@ namespace Cohesion\Environment;
 
 use \Cohesion\Util\Input;
 use \Cohesion\Structure\Factory\ServiceFactory;
-use \Cohesion\Auth\HTTPAuth;
+use \Cohesion\Structure\Factory\RoutingFactory;
+use \Cohesion\Structure\Factory\ViewFactory;
 
 class HTTPEnvironment extends Environment {
 
@@ -18,10 +19,7 @@ class HTTPEnvironment extends Environment {
             session_start();
         }
 
-        $this->input = new Input(isset($_REQUEST) ? $_REQUEST : array());
-
-        $this->auth = new HTTPAuth($this->input);
-        ServiceFactory::setEnvironment($this);
+        $this->input = new Input($_REQUEST ?: array());
 
         $global = $this->config->get('global');
         $this->supportedMimeTypes = $this->config->get('view.mime_types');
@@ -47,6 +45,9 @@ class HTTPEnvironment extends Environment {
         $global['uri'] = explode('?', $_SERVER['REQUEST_URI'])[0];
 
         $this->config->merge('global', $global);
+
+        RoutingFactory::$config = $this->getConfig('routing');
+        ViewFactory::$config = $this->getConfig('view');
     }
 
     public function getFormat() {

@@ -2,7 +2,6 @@
 namespace Cohesion\Auth;
 
 use \Cohesion\Config\Config;
-use \Cohesion\Structure\Factory\ServiceFactory;
 use \Cohesion\Util\External\Facebook\Facebook;
 use \Cohesion\Util\Input;
 
@@ -14,24 +13,17 @@ class FacebookAuth extends HTTPAuth {
     protected $redirectUrl;
     protected $siteName;
     protected $config;
-    protected $userService;
 
     public $token = false;
 
-    public function __construct(Config $config, Input $input) {
-        parent::__construct($input);
+    public function __construct(FacebookUserServiceInterface $userService, Config $config) {
+        parent::__construct($userService);
         $this->appId = $config->get('application.facebook.app_id');
         $this->secret = $config->get('application.facebook.secret');
         $this->permissions = $config->get('application.facebook.permissions');
         $this->redirectUrl = $config->get('global.base_url') . $config->get('global.uri');
         $this->siteName = $config->get('global.site_name');
         $this->config = $config->getConfig('utility.facebook');
-        $userService = ServiceFactory::getService('User');
-        if ($userService) {
-            $this->userService = $userService;
-        } else {
-            throw new AuthException("Unable to login with Facebook as no UserService exists for this system");
-        }
     }
 
     public function login() {
@@ -73,6 +65,7 @@ class FacebookAuth extends HTTPAuth {
                     $this->user->setFacebookId($facebookUser->id);
                     $user = $this->user;
                 }
+                $this->user = $user;
                 $this->userService->setUser($user);
                 $this->userService->setFacebookToken($this->token);
                 $this->setUserLoggedIn($user);
