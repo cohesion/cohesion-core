@@ -50,8 +50,7 @@ class ServiceFactory extends AbstractFactory {
                 $value = $this->get($param->getClass()->getName());
                 array_pop($this->cyclicDependancies);
             } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\Util')) {
-                $utilClass = $param->getClass()->getName();
-                $value = new $utilClass($this->config->getConfig('utility.' . strtolower($param->getClass()->getShortName())));
+                $value = $this->getUtil($param->getClass());
             } else if ($this->auth && $param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Auth\\User')) {
                 $value = $this->auth->getUser();
             } else if ($param->getClass() && $param->getClass()->isInstantiable()) {
@@ -82,6 +81,14 @@ class ServiceFactory extends AbstractFactory {
 
     public function setAuth(Auth $auth) {
         $this->auth = $auth;
+    }
+
+    public function getUtil($class) {
+        if (is_string($class)) {
+            $class = new ReflectionClass($class);
+        }
+        $utilClass = $class->getName();
+        return new $utilClass($this->config->getConfig('utility.' . strtolower($class->getShortName())));
     }
 
     private function getServiceDAO($serviceClass) {
