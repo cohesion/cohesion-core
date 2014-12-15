@@ -4,8 +4,8 @@ namespace Cohesion\Auth;
 use \LogicException;
 
 class AdminAuth extends Auth {
-    public function __construct() {
-        parent::__construct();
+    public function __construct(UserServiceInterface $userService) {
+        parent::__construct($userService);
         $this->user = $this->userService->getUserByUsername('admin');
         if (!$this->user) {
             throw new LogicException("You must have an 'admin' user to be able to use the Admin Auth");
