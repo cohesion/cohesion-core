@@ -8,16 +8,25 @@ use \ReflectionClass;
 class ServiceFactory extends AbstractFactory {
 
     private $config;
-    private $auth;
+    private $user;
 
     private $daoFactory;
     private $services;
     private $cyclicDependancies;
 
-    public function __construct(Config $config, Auth $auth = null) {
+    const SERVICE_CONFIG_SECTION = 'application';
+    const UTILITY_CONFIG_SECTION = 'utilities';
+    const DATA_ACCESS_CONFIG_SECTION = 'data_access';
+    const DEFAULT_SERVICE_PREFIX = '';
+    const DEFAULT_SERVICE_SUFFIX = 'Service';
+    const DEFAULT_DATA_ACCESS_PREFIX = '';
+    const DEFAULT_DATA_ACCESS_SUFFIX = 'DAO';
+
+    public function __construct(DataAccessFactory $daoFactory, Config $config = null, $user = null) {
+        $this->daoFactory = $daoFactory;
         $this->config = $config;
-        $this->auth = $auth;
-        $this->daoFactory = new DataAccessFactory($config->getConfig('data_access'));
+        $this->utilFactory = new UtilityFactory($config ? $config->getConfig(static::UTILITY_CONFIG_SECTION) : null);
+        $this->user = $user;
         $this->services = array();
         $this->cyclicDependancies = array();
     }
@@ -34,9 +43,17 @@ class ServiceFactory extends AbstractFactory {
         $values = array();
         foreach ($params as $i => $param) {
             unset($value);
-            if ($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Config\\Config') {
-                $value = $this->config->getConfig('application');
-            } else if ($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Structure\\DAO') {
+            if (($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Config\\Config') || $param->getName() === 'config') {
+                if (!$this->config) {
+                    if (!$param->isOptional()) {
+                        throw new LogicException('No configuration is available and is required by ' . $param->getName());
+                    } else {
+                        $value = $param->getDefaultValue();
+                    }
+                } else {
+                    $value = $this->config->getConfig(static::SERVICE_CONFIG_SECTION);
+                }
+            } else if (($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Structure\\DAO') || $param->getName() === 'dao') {
                 $value = $this->getServiceDAO($class);
             } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\DAO')) {
                 $value = $this->daoFactory->get($param->getClass()->getName());
@@ -49,54 +66,51 @@ class ServiceFactory extends AbstractFactory {
                 $this->cyclicDependancies[] = $param->getClass()->getName();
                 $value = $this->get($param->getClass()->getName());
                 array_pop($this->cyclicDependancies);
-            } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\Util')) {
-                $value = $this->getUtil($param->getClass());
-            } else if ($this->auth && $param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Auth\\User')) {
-                $value = $this->auth->getUser();
-            } else if ($param->getClass() && $param->getClass()->isInstantiable()) {
-                $constructor = null;
+            } else if ($this->user && ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Auth\\User')) || $param->getName() === 'user') {
+                $value = $this->user;
+            } else if ($param->getClass()) {
                 try {
-                    $constructor = $this->getConstructor($param->getClass());
+                    $util = $this->getUtil($param->getClass());
+                    if ($util) {
+                        $value = $util;
+                    }
                 } catch (InvalidClassException $e) {
+                    throw new InvalidPropertyException('Invalid service property ' . $param->getName(), 0, $e);
                 }
-                if (!$constructor || $constructor->getNumberOfRequiredParameters() == 0) {
-                    $value = $param->getClass()->newInstance();
-                } else if (!$param->isOptional()) {
-                    throw new InvalidPropertyException('Invalid Service property ' . $param->getName() . '. Unable to create instance of ' . $param->getClass->getName());
-                }
-            } else if (!$param->isOptional()) {
-                throw new InvalidPropertyException('Invalid Service property ' . $param->getName());
             }
             if (isset($value)) {
                 $values[$i] = $value;
+            } else if ($param->isOptional()) {
+                $values[$i] = $param->getDefaultValue();
+            } else {
+                throw new InvalidPropertyException('Invalid Service property ' . $param->getName());
             }
         }
         $service = $reflection->newInstanceArgs($values);
-        if ($this->auth) {
-            $service->setUser($this->auth->getUser());
+        if ($this->user && $reflection->hasMethod('setUser')) {
+            $service->setUser($this->user);
         }
         $this->services[$class] = $service;
         return $service;
     }
 
-    public function setAuth(Auth $auth) {
-        $this->auth = $auth;
+    public function setUser($user) {
+        $this->user = $user;
     }
 
-    public function getUtil($class) {
-        if (is_string($class)) {
-            $class = new ReflectionClass($class);
+    public function getUtil($className) {
+        if (!$this->utilFactory) {
+            throw new LogicException("Util factory hasn't been initialized");
         }
-        $utilClass = $class->getName();
-        return new $utilClass($this->config->getConfig('utility.' . strtolower($class->getShortName())));
+        return $this->utilFactory->get($className);
     }
 
     private function getServiceDAO($serviceClass) {
-        $servicePrefix = $this->config->get('application.class.prefix');
-        $serviceSuffix = $this->config->get('application.class.suffix');
+        $servicePrefix = $this->config ? $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.prefix') : static::DEFAULT_SERVICE_PREFIX;
+        $serviceSuffix = $this->config ? $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.suffix') : static::DEFAULT_SERVICE_SUFFIX;
         $name = preg_replace(["/^$servicePrefix/", "/$serviceSuffix$/"], '', $serviceClass);
-        $daoPrefix = $this->config->get('data_access.class.prefix');
-        $daoSuffix = $this->config->get('data_access.class.suffix');
+        $daoPrefix = $this->config ? $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.prefix') : static::DEFAULT_DATA_ACCESS_PREFIX;
+        $daoSuffix = $this->config ? $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.suffix') : static::DEFAULT_DATA_ACCESS_SUFFIX;
         $class = $daoPrefix . $name . $daoSuffix;
         if (!class_exists($class)) {
             throw new InvalidClassException("$class does not exist");

@@ -1,7 +1,6 @@
 <?php
 namespace Cohesion\Structure;
 
-use \Cohesion\Config\Configurable;
 use \Cohesion\Config\Config;
 use \Cohesion\Util\Input;
 use \Cohesion\Auth\Auth;
@@ -18,18 +17,18 @@ use \Cohesion\Structure\Factory\ServiceFactory;
  *
  * @author Adric Schreuders
  */
-abstract class Controller implements Configurable {
+abstract class Controller {
     protected $config;
     protected $input;
     protected $auth;
     protected $env;
     protected $factory;
 
-    public function __construct(Config $config, Input $input = null, Auth $auth = null, Environment $env = null) {
-        $this->config = $config;
+    public function __construct(ServiceFactory $factory, Input $input = null, Config $config, Auth $auth = null, Environment $env = null) {
+        $this->factory = $factory;
         $this->input = $input;
+        $this->config = $config;
         $this->auth = $auth;
         $this->env = $env;
-        $this->factory = new ServiceFactory($config, $auth);
     }
 }
