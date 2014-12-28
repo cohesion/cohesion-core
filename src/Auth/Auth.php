@@ -9,7 +9,7 @@ abstract class Auth {
 
     const AUTH_HASH_SIZE = 32;
 
-    public function __construct(UserServiceInterface $userService) {
+    public function __construct(UserServiceInterface $userService = null) {
         $this->userService = $userService;
     }
 
