@@ -119,6 +119,9 @@ class Config {
      */
     public function getConfig($name) {
         $data = $this->get($name);
+        if ($data === null) {
+            return null;
+        }
         $config = new self();
         $config->load($data);
         return $config;

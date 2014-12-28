@@ -2,6 +2,7 @@
 namespace Cohesion\Structure\Factory;
 
 use \Cohesion\Config\Config;
+use \Cohesion\Config\MissingConfigurationException;
 use \ReflectionClass;
 
 class UtilityFactory extends AbstractFactory {

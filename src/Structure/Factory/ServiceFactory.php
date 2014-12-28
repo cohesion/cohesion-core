@@ -15,7 +15,7 @@ class ServiceFactory extends AbstractFactory {
     private $cyclicDependancies;
 
     const SERVICE_CONFIG_SECTION = 'application';
-    const UTILITY_CONFIG_SECTION = 'utilities';
+    const UTILITY_CONFIG_SECTION = 'utility';
     const DATA_ACCESS_CONFIG_SECTION = 'data_access';
     const DEFAULT_SERVICE_PREFIX = '';
     const DEFAULT_SERVICE_SUFFIX = 'Service';
