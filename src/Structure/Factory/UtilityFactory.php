@@ -50,7 +50,7 @@ class UtilityFactory extends AbstractFactory {
         $driver = $config->get('driver');
         if (!$driver) {
             if ($reflection->isInstantiable()) {
-                $driver = $reflection->getClass();
+                $driver = $reflection->getName();
                 $driverReflection = $reflection;
             } else {
                 throw new MissingConfigurationException("Configuration for $class must include a driver");
