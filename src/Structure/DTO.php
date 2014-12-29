@@ -18,18 +18,30 @@ abstract class DTO {
     const MAX_URL_LENGTH = 255;
 
     public function __construct($vars) {
+        if (!is_array($vars)) {
+            $className = get_class($this);
+            throw new \InvalidArgumentException("$className argument should be an associative array");
+        }
         $this->reflection = new \ReflectionClass($this);
+        $this->setMultiple($vars);
+    }
 
+    /**
+     * Update protected class parameters using an associative array
+     */
+    public function setMultiple($vars) {
         $classProperties = $this->reflection->getProperties();
         $classVars = array();
         foreach ($classProperties as $property) {
             $classVars[strtolower($property->name)] = $property->name;
         }
+
         $reflectionMethods = $this->reflection->getMethods();
         $classMethods = array();
         foreach ($reflectionMethods as $method) {
             $classMethods[strtolower($method->name)] = $method->name;
         }
+
         // for each var in vars array
         foreach ($vars as $var => $value) {
             $var = $this->underscoreToCamel($var);
@@ -48,6 +60,36 @@ abstract class DTO {
         }
     }
 
+    /**
+     * Magic function that simulates getters and setters if they're not already
+     * provided. You can still provide your own and if so that would be used
+     * instead.
+     */
+    public function __call($method, $args = null) {
+        if (preg_match('/^get(.*)$/', $method, $matches)) {
+            $param = lcfirst($matches[1]);
+            if ($this->reflection->hasProperty($param)) {
+                return $this->$param;
+            } else {
+                throw new \BadFunctionCallException("Property `$param` does not exist within " . $this->reflection->getName());
+            }
+        }
+        if (preg_match('/^set(.*)$/', $method, $matches)) {
+            $param = lcfirst($matches[1]);
+            if ($this->reflection->hasProperty($param)) {
+                if (is_array($args) && count($args) === 1) {
+                    $this->$param = $args[0];
+                    return true;
+                } else {
+                    throw new \BadFunctionCallException("Method `$method` expects one argument " . (is_array($args) ? count($args) : 'none') . ' given');
+                }
+            } else {
+                throw new \BadFunctionCallException("Property `$param` does not exist within " . $this->reflection->getName());
+            }
+        }
+        throw new \BadFunctionCallException("Method `$method` does not exist");
+    }
+
     public function setId($id) {
         $className = get_class($this);
         if (!$this->reflection->hasProperty('id')) {
@@ -60,7 +102,7 @@ abstract class DTO {
     }
 
     public function getVars() {
-        $classProperties = $this->reflection->getProperties();
+        $classProperties = $this->reflection->getProperties(\ReflectionProperty::IS_PROTECTED);
         $vars = array();
         foreach ($classProperties as $property) {
             // if it's another DTO
@@ -76,6 +118,9 @@ abstract class DTO {
                 foreach ($this->{$property->name} as $i => $v) {
                     $var[$i] = $v->getVars();
                 }
+            // If it's some other kind of object
+            } else if (is_object($this->{$property->name}) && method_exists($this->{$property->name}, '__toString')) {
+                $var = (string)$this->{$property->name};
             // Otherwise
             } else {
                 // Just use the value
