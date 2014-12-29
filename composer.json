@@ -12,10 +12,12 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "ext-apcu": "*",
-        "ext-mysqlnd": "*",
-        "ext-curl": "*",
-        "mustache/mustache": "~2.5"
+        "mustache/mustache": "~2.7"
+    },
+    "suggest": {
+        "ext-apcu": "Use APC for caching",
+        "ext-mysqlnd": "Required for the database interaction functionalities",
+        "ext-curl": "Perform Curl requests"
     },
     "autoload": {
         "psr-4": { "Cohesion\\": "src/" }
