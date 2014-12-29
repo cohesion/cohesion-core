@@ -1,9 +1,6 @@
 <?php
 namespace Cohesion\Structure\Factory;
 
-use \Cohesion\Environment\Environment;
-use \Cohesion\Config\Config;
-
 abstract class AbstractFactory {
 
     protected function getConstructor(\ReflectionClass $reflection, \ReflectionClass $originalClass = null) {

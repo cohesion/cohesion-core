@@ -6,9 +6,6 @@ class Config {
     protected $data = array();
     protected $cache;
 
-    public function __construct() {
-    }
-
     public function setCache($cache) {
         $this->cache = $cache;
     }
