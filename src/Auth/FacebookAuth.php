@@ -18,12 +18,12 @@ class FacebookAuth extends HTTPAuth {
 
     public function __construct(FacebookUserServiceInterface $userService, Config $config) {
         parent::__construct($userService);
-        $this->appId = $config->get('application.facebook.app_id');
-        $this->secret = $config->get('application.facebook.secret');
-        $this->permissions = $config->get('application.facebook.permissions');
+        $this->config = $config->getConfig('utility.Facebook');
+        $this->appId = $this->config->get('app_id');
+        $this->secret = $this->config->get('secret');
+        $this->permissions = $this->config->get('permissions');
         $this->redirectUrl = $config->get('global.base_url') . $config->get('global.uri');
         $this->siteName = $config->get('global.site_name');
-        $this->config = $config->getConfig('utility.facebook');
     }
 
     public function login() {
