@@ -7,12 +7,12 @@ use \ReflectionClass;
 
 class ServiceFactory extends AbstractFactory {
 
-    private $config;
-    private $user;
+    protected $config;
+    protected $user;
 
-    private $daoFactory;
-    private $services;
-    private $cyclicDependancies;
+    protected $daoFactory;
+    protected $services;
+    protected $cyclicDependancies;
 
     const SERVICE_CONFIG_SECTION = 'application';
     const UTILITY_CONFIG_SECTION = 'utility';
@@ -53,7 +53,7 @@ class ServiceFactory extends AbstractFactory {
                 } else {
                     $value = $this->config->getConfig(static::SERVICE_CONFIG_SECTION);
                 }
-            } else if (($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Structure\\DAO') || $param->getName() === 'dao') {
+            } else if (($param->getClass() && ($param->getClass()->getName() == 'Cohesion\\Structure\\DAO' || ($param->getClass()->isSubclassOf('Cohesion\\Structure\\DAO') && !$param->getClass()->isInstantiable()))) || $param->getName() === 'dao') {
                 $value = $this->getServiceDAO($class);
             } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\DAO')) {
                 $value = $this->daoFactory->get($param->getClass()->getName());
