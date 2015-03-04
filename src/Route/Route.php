@@ -111,6 +111,9 @@ class Route implements Configurable {
         } else if (count($params) > $maxParams) {
             throw new RouteException("$className->$functionName only accepts up to $maxParams parameters");
         }
+        foreach ($params as &$param) {
+            $param = urldecode($param);
+        }
 
         $this->className = $className;
         $this->functionName = $functionName;
