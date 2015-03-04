@@ -59,12 +59,55 @@ abstract class DTO {
         $this->id = $id;
     }
 
+    /**
+     * Magic function that simulates getters and setters if they're not already
+     * provided. You can still provide your own and if so that would be used
+     * instead.
+     */
+    public function __call($method, $args = null) {
+        if (preg_match('/^get(.*)$/', $method, $matches)) {
+            $param = lcfirst($matches[1]);
+            if ($this->reflection->hasProperty($param)) {
+                return $this->$param;
+            } else {
+                throw new \BadFunctionCallException("Property `$param` does not exist within " . $this->reflection->getName());
+            }
+        }
+        if (preg_match('/^set(.*)$/', $method, $matches)) {
+            $param = lcfirst($matches[1]);
+            if ($this->reflection->hasProperty($param)) {
+                if (is_array($args) && count($args) === 1) {
+                    $this->$param = $args[0];
+                    return true;
+                } else {
+                    throw new \BadFunctionCallException("Method `$method` expects one argument " . (is_array($args) ? count($args) : 'none') . ' given');
+                }
+            } else {
+                throw new \BadFunctionCallException("Property `$param` does not exist within " . $this->reflection->getName());
+            }
+        }
+        if (preg_match('/^is(.*)$/', $method, $matches)) {
+            $param = lcfirst($matches[1]);
+            if ($this->reflection->hasProperty($param)) {
+                return (boolean)$this->$param;
+            } else {
+                throw new \BadFunctionCallException("Property `$param` does not exist within " . $this->reflection->getName());
+            }
+        }
+        throw new \BadFunctionCallException("Method `$method` does not exist");
+    }
+
+    /**
+     * Export protected class parameters as an associative array
+     */
     public function getVars() {
-        $classProperties = $this->reflection->getProperties();
+        $classProperties = $this->reflection->getProperties(\ReflectionProperty::IS_PROTECTED);
         $vars = array();
         foreach ($classProperties as $property) {
+            if (!isset($this->{$property->name})) {
+                $var = null;
             // if it's another DTO
-            if ($this->{$property->name} instanceof DTO) {
+            } else if ($this->{$property->name} instanceof DTO) {
                 // Get it's vars
                 $var = $this->{$property->name}->getVars();
             // If it's an array of DTOs
@@ -76,6 +119,9 @@ abstract class DTO {
                 foreach ($this->{$property->name} as $i => $v) {
                     $var[$i] = $v->getVars();
                 }
+            // If it's some other kind of object
+            } else if (is_object($this->{$property->name}) && method_exists($this->{$property->name}, '__toString')) {
+                $var = (string)$this->{$property->name};
             // Otherwise
             } else {
                 // Just use the value
