@@ -146,11 +146,16 @@ abstract class DTO {
     }
 
     private function underscoreToCamel($name, $firstCaps = false) {
-        if ($firstCaps == true) {
-            $name[0] = strtoupper($name[0]);
+        $words = explode('_', $name);
+        $return = '';
+        foreach ($words as $i => $word) {
+            if ($i > 0 || $firstCaps) {
+                $return .= ucfirst($word);
+            } else {
+                $return .= $word;
+            }
         }
-        $func = create_function('$c', 'return strtoupper($c[1]);');
-        return preg_replace_callback('/_([a-z])/', $func, $name);
+        return $return;
     }
 
     protected function validateId($id) {
