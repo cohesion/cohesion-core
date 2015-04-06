@@ -37,13 +37,16 @@ class UtilityFactory extends AbstractFactory {
             $reflection = new ReflectionClass($class);
         }
 
-        $config = $this->config->getConfig($class);
-        if (!$config) {
-            $config = $this->config->getConfig($reflection->getShortName());
+        $config = null;
+        if ($this->config) {
+            $config = $config->getConfig($class);
+            if (!$config) {
+                $config = $this->config->getConfig($reflection->getShortName());
+            }
         }
         if (!$config) {
             if ($reflection->isInstantiable() && $this->getConstructor($reflection)->getNumberOfRequiredParameters() == 0) {
-                $util = $reflection->newInstance();
+                return $reflection->newInstance();
             } else {
                 throw new MissingConfigurationException("No configuration found for utility $class");
             }
@@ -70,9 +73,12 @@ class UtilityFactory extends AbstractFactory {
         return $utility;
     }
 
-    protected function getClass(ReflectionClass $class, Config $config, $name = null) {
+    protected function getClass(ReflectionClass $class, Config $config = null, $name = null) {
         $parameters = $this->getConstructor($class)->getParameters();
         $values = array();
+        if (!$config && $parameters) {
+            throw new MissingConfigurationException('Missing configuration for utility class ' . $class->getName());
+        }
         foreach ($parameters as $i => $parameter) {
             if (($parameter->getClass() && $parameter->getClass()->getName() === 'Cohesion\\Structure\\Config') || $parameter->getName() === 'config') {
                 $values[] = $config;
