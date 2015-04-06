@@ -43,6 +43,7 @@ class ServiceFactory extends AbstractFactory {
         $values = array();
         foreach ($params as $i => $param) {
             unset($value);
+            // Config parameter
             if (($param->getClass() && $param->getClass()->getName() == 'Cohesion\\Config\\Config') || $param->getName() === 'config') {
                 if (!$this->config) {
                     if (!$param->isOptional()) {
@@ -53,10 +54,16 @@ class ServiceFactory extends AbstractFactory {
                 } else {
                     $value = $this->config->getConfig(static::SERVICE_CONFIG_SECTION);
                 }
+            // ServiceFactory parameter
+            } else if ($param->getClass() && ($param->getClass()->getName() == 'Cohesion\\Structure\\Factory\\ServiceFactory' || $param->getClass()->isSubclassOf('Cohesion\\Structure\\Factory\\ServiceFactory'))) {
+                $value = $this;
+            // abstract DAO parameter
             } else if (($param->getClass() && ($param->getClass()->getName() == 'Cohesion\\Structure\\DAO' || ($param->getClass()->isSubclassOf('Cohesion\\Structure\\DAO') && !$param->getClass()->isInstantiable()))) || $param->getName() === 'dao') {
                 $value = $this->getServiceDAO($class);
+            // DAO instance parameter
             } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\DAO')) {
                 $value = $this->daoFactory->get($param->getClass()->getName());
+            // Service parameter
             } else if ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Structure\\Service')) {
                 if (in_array($param->getClass()->getName(), $this->cyclicDependancies)) {
                     $dependancies = implode(' -> ', $this->cyclicDependancies) . ' -> ' . $param->getClass()->getName();
@@ -66,8 +73,10 @@ class ServiceFactory extends AbstractFactory {
                 $this->cyclicDependancies[] = $param->getClass()->getName();
                 $value = $this->get($param->getClass()->getName());
                 array_pop($this->cyclicDependancies);
+            // User parameter
             } else if ($this->user && ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Auth\\User')) || $param->getName() === 'user') {
                 $value = $this->user;
+            // Default, try to instaciate it as a utility
             } else if ($param->getClass()) {
                 try {
                     $util = $this->getUtil($param->getClass());
