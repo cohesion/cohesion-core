@@ -127,6 +127,22 @@ class Config {
         return $config;
     }
 
+    /**
+     * Set a value in the config. If the value doesn't exist it will be created.
+     */
+    public function set($name, $value) {
+        $data = array();
+        $dataPointer = &$data;
+        $parents = explode('.', $name);
+        $name = array_pop($parents);
+        foreach ($parents as $parent) {
+            $dataPointer[$parent] = array();
+            $dataPointer = &$dataPointer[$parent];
+        }
+        $dataPointer[$name] = $value;
+        $this->load($data);
+    }
+
     protected static function isAssociativeArray($arr) {
         return is_array($arr) && array_keys($arr) !== range(0, count($arr) - 1);
     }
