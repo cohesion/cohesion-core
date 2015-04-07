@@ -25,7 +25,12 @@ class ServiceFactory extends AbstractFactory {
     public function __construct(DataAccessFactory $daoFactory, Config $config = null, $user = null) {
         $this->daoFactory = $daoFactory;
         $this->config = $config;
-        $this->utilFactory = new UtilityFactory($config ? $config->getConfig(static::UTILITY_CONFIG_SECTION) : null);
+        if ($config) {
+            $utilConfig = $config->getConfig(static::UTILITY_CONFIG_SECTION);
+        } else {
+            $utilConfig = null;
+        }
+        $this->utilFactory = new UtilityFactory($utilConfig);
         $this->user = $user;
         $this->services = array();
         $this->cyclicDependancies = array();
@@ -77,7 +82,7 @@ class ServiceFactory extends AbstractFactory {
             } else if ($this->user && ($param->getClass() && $param->getClass()->isSubclassOf('Cohesion\\Auth\\User')) || $param->getName() === 'user') {
                 $value = $this->user;
             // Default, try to instaciate it as a utility
-            } else if ($param->getClass()) {
+            } else if ($param->getClass() && $this->utilFactory) {
                 try {
                     $util = $this->getUtil($param->getClass());
                     if ($util) {

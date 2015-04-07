@@ -39,7 +39,7 @@ class UtilityFactory extends AbstractFactory {
 
         $config = null;
         if ($this->config) {
-            $config = $config->getConfig($class);
+            $config = $this->config->getConfig($class);
             if (!$config) {
                 $config = $this->config->getConfig($reflection->getShortName());
             }
