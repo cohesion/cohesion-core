@@ -19,7 +19,10 @@ abstract class DTO {
 
     public function __construct($vars) {
         $this->reflection = new \ReflectionClass($this);
+        $this->setMultiple($vars);
+    }
 
+    public function setMultiple($vars) {
         $classProperties = $this->reflection->getProperties();
         $classVars = array();
         foreach ($classProperties as $property) {
@@ -100,7 +103,7 @@ abstract class DTO {
     /**
      * Export protected class parameters as an associative array
      */
-    public function getVars() {
+    public function getVars($showNulls = false) {
         $classProperties = $this->reflection->getProperties(\ReflectionProperty::IS_PROTECTED);
         $vars = array();
         foreach ($classProperties as $property) {
@@ -127,7 +130,9 @@ abstract class DTO {
                 // Just use the value
                 $var = $this->{$property->name};
             }
-            $vars[$this->camelToUnderscore($property->name)] = $var;
+            if ($var !== null || $showNulls) {
+                $vars[$this->camelToUnderscore($property->name)] = $var;
+            }
         }
         return $vars;
     }
@@ -136,7 +141,7 @@ abstract class DTO {
      * Convert camelCase to camel_case
      * http://stackoverflow.com/questions/1993721/how-to-convert-camelcase-to-camel-case
      */
-    private function camelToUnderscore($name) {
+    protected function camelToUnderscore($name) {
         preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $name, $matches);
         $ret = $matches[0];
         foreach ($ret as &$match) {
@@ -145,7 +150,7 @@ abstract class DTO {
         return implode('_', $ret);
     }
 
-    private function underscoreToCamel($name, $firstCaps = false) {
+    protected function underscoreToCamel($name, $firstCaps = false) {
         $words = explode('_', $name);
         $return = '';
         foreach ($words as $i => $word) {
