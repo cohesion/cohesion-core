@@ -24,7 +24,13 @@ abstract class Controller {
     protected $env;
     protected $factory;
 
-    public function __construct(ServiceFactory $factory, Input $input = null, Config $config, Auth $auth = null, Environment $env = null) {
+    public function __construct(
+        ServiceFactory $factory,
+        Input $input = null,
+        Config $config = null,
+        Auth $auth = null,
+        Environment $env = null
+    ) {
         $this->factory = $factory;
         $this->input = $input;
         $this->config = $config;
