@@ -9,11 +9,14 @@ use \MissingAssetException;
 use \Mustache_Engine;
 use \Mustache_Loader_FilesystemLoader;
 use \Mustache_LambdaHelper;
+use \DateTime;
+use \DateTimeZone;
 
 class CohesionMo extends Mustache_Engine implements TemplateEngine, Configurable {
 
     protected $config;
     protected $versionCache;
+    protected $timezone;
 
     public function __construct(Config $config) {
         $this->config = $config;
@@ -71,6 +74,15 @@ class CohesionMo extends Mustache_Engine implements TemplateEngine, Configurable
         $vars['asset_url'] = function ($content, Mustache_LambdaHelper $helper) {
             return $this->getAssetUrl($helper->render($content));
         };
+        $vars['format_timestamp_as_date'] = function ($content, Mustache_LambdaHelper $helper) {
+            return $this->formatTimestampAsDate($helper->render($content));
+        };
+        $vars['format_timestamp_as_date_time'] = function ($content, Mustache_LambdaHelper $helper) {
+            return $this->formatTimestampAsDateTime($helper->render($content));
+        };
+        $vars['format_timestamp_as_relative_time'] = function ($content, Mustache_LambdaHelper $helper) {
+            return $this->formatTimestampAsRelativeTime($helper->render($content));
+        };
     }
 
     protected function getSiteUrl($uri) {
@@ -125,6 +137,66 @@ class CohesionMo extends Mustache_Engine implements TemplateEngine, Configurable
             }
         }
         return $cdn . $asset . '?v=' . $version;
+    }
+
+    protected function formatTimestamp($timestamp, $format = '') {
+        if (!is_numeric($timestamp)) {
+            return '';
+        }
+        if (!$this->timezone && $this->config->get('global.timezone')) {
+            $this->timezone = new DateTimeZone($this->config->get('global.timezone'));
+        }
+        $datetime = new DateTime();
+        $datetime->setTimestamp($timestamp);
+        if ($this->timezone) {
+            $datetime->setTimezone($this->timezone);
+        }
+        return $datetime->format($format);
+    }
+
+    protected function formatTimestampAsDate($timestamp) {
+        $format = $this->config->get('global.date_format') ?: 'd/m/Y';
+        return $this->formatTimestamp($timestamp, $format);
+    }
+
+    protected function formatTimestampAsDateTime($timestamp) {
+        $format = $this->config->get('global.date_time_format') ?: 'd/m/Y H:i:s';
+        return $this->formatTimestamp($timestamp, $format);
+    }
+
+    protected function formatTimestampAsRelativeTime($timestamp) {
+        $now = time();
+        $diff = $now - $timestamp;
+        $past = $diff > 0;
+        $diff = abs($diff);
+        // Less than a minute
+        // recently / soon
+        if ($diff < 60) {
+            return $past ? 'recently' : 'soon';
+        }
+        // Less than a day
+        // X hours and Y minutes ago / in X hours and Y minutes
+        if ($diff < 60 * 60 * 24) {
+            $hours = (int)($diff / 60 / 60);
+            $minutes = (int)($diff - ($hours * 60 * 60) / 60);
+            $string = ($hours ? $hours . ' hour' . ($hours > 1 ? 's' : '') . ($minutes ? ' and ' : '') : '') . ($minutes ? $minutes . ' minute' . ($minutes > 1 ? 's' : '') : '');
+            return $past ? $string . ' ago' : 'in ' . $string;
+        }
+        $days = (int)($diff / 60 / 60 / 24);
+        // 1 day
+        // yesterday / tomorrow
+        if ($days == 1) {
+            return $past ? 'yesterday' : 'tomorrow';
+        }
+        // Less than 28 days
+        // X days ago / in X days
+        if ($days <= 28) {
+            $string = $days . ' day' . ($days > 1 ? 's' : '');
+            return $past ? $string . ' ago' : 'in ' . $string;
+        }
+        // More than 28 days
+        // d/m/Y
+        return $this->formatTimestampAsDate($timestamp);
     }
 }
 
