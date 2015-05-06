@@ -33,19 +33,21 @@ abstract class DTO {
         foreach ($reflectionMethods as $method) {
             $classMethods[strtolower($method->name)] = $method->name;
         }
-        // for each var in vars array
-        foreach ($vars as $var => $value) {
-            $var = $this->underscoreToCamel($var);
-            // if var is a class var
-            if (isset($classVars[strtolower($var)])) {
-                // if the var has a set method
-                if (isset($classMethods['set' . strtolower($var)])) {
-                    // set the var using it's set method
-                    $this->{$classMethods['set' . strtolower($var)]}($value);
-                // otherwise
-                } else {
-                    // just set the var directly
-                    $this->{$classVars[strtolower($var)]} = $value;
+        if (!empty($vars)) {
+            // for each var in vars array
+            foreach ($vars as $var => $value) {
+                $var = $this->underscoreToCamel($var);
+                // if var is a class var
+                if (isset($classVars[strtolower($var)])) {
+                    // if the var has a set method
+                    if (isset($classMethods['set' . strtolower($var)])) {
+                        // set the var using it's set method
+                        $this->{$classMethods['set' . strtolower($var)]}($value);
+                    // otherwise
+                    } else {
+                        // just set the var directly
+                        $this->{$classVars[strtolower($var)]} = $value;
+                    }
                 }
             }
         }
@@ -115,12 +117,14 @@ abstract class DTO {
                 $var = $this->{$property->name}->getVars();
             // If it's an array of DTOs
             } else if (is_array($this->{$property->name})
-                    && count($this->{$property->name}) > 0
+                    && count($this->{$property->name}) > 0) {
+                if (isset($this->{$property->name}[0])
                     && $this->{$property->name}[0] instanceof DTO) {
-                $var = array();
-                // Get the vars for each
-                foreach ($this->{$property->name} as $i => $v) {
-                    $var[$i] = $v->getVars();
+                    $var = array();
+                    // Get the vars for each
+                    foreach ($this->{$property->name} as $i => $v) {
+                        $var[$i] = $v->getVars();
+                    }
                 }
             // If it's some other kind of object
             } else if (is_object($this->{$property->name}) && method_exists($this->{$property->name}, '__toString')) {
