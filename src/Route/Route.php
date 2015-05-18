@@ -39,22 +39,23 @@ class Route implements Configurable {
         $ext = '.' . $this->config->get('extension', 'php');
         foreach ($components as $component) {
             if (!$functionName) {
-                $directory = $dir . $component;
-                if (file_exists($directory) && is_dir($directory)) {
-                    $dir = $directory . DIRECTORY_SEPARATOR;
-                    continue;
-                }
-                $checkClassName = $this->constructClassName($component);
-                $filePath = $dir . $checkClassName . $ext;
-                if (file_exists($filePath)) {
-                    include_once($filePath);
-                    if (!class_exists($checkClassName)) {
-                        throw new RouteException("$filePath doesn't contain a $checkClassName class");
+                if ($className === $defaultClassName) {
+                    $directory = $dir . $component;
+                    if (file_exists($directory) && is_dir($directory)) {
+                        $dir = $directory . DIRECTORY_SEPARATOR;
+                        continue;
                     }
-                    $className = $checkClassName;
-                    continue;
-                } else {
-                    if ($className === $defaultClassName) {
+                    $checkClassName = $this->constructClassName($component);
+                    $filePath = $dir . $checkClassName . $ext;
+                    if (file_exists($filePath)) {
+                        include_once($filePath);
+                        if (!class_exists($checkClassName)) {
+                            throw new RouteException("$filePath doesn't contain a $checkClassName class");
+                        }
+                        $className = $checkClassName;
+                        continue;
+                    } else {
+                        // As soon as there's no file or folder that matches, load the default controller
                         $filePath = $dir . $className . $ext;
                         if (!file_exists($filePath)) {
                             throw new RouteException("Default controller $className cannot be found");
