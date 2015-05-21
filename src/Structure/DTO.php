@@ -130,7 +130,7 @@ abstract class DTO {
                 // Just use the value
                 $var = $this->{$property->name};
             }
-            if ($var !== null || $showNulls) {
+            if ($showNulls || ($var !== null && (!is_array($var) || count($var) > 0))) {
                 $vars[$this->camelToUnderscore($property->name)] = $var;
             }
         }
