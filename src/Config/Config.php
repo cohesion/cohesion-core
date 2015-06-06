@@ -122,6 +122,9 @@ class Config {
         if ($data === null) {
             return null;
         }
+        if (isset($this->data['global'])) {
+            $data['global'] = $this->data['global'];
+        }
         $config = new self();
         $config->load($data);
         return $config;
