@@ -25,7 +25,7 @@ class Service {
     }
 
     public function setUser(User $user = null) {
-        if ($user && (!$this->user || $this->admin)) {
+        if ($user && ((!$this->user || $this->admin) || $this->user->getId() == $user->getId())) {
             if (!$this->user) {
                 if ($user->isAdmin()) {
                     $this->admin = $user;
