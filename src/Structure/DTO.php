@@ -34,18 +34,20 @@ abstract class DTO {
             $classMethods[strtolower($method->name)] = $method->name;
         }
         // for each var in vars array
-        foreach ($vars as $var => $value) {
-            $var = $this->underscoreToCamel($var);
-            // if var is a class var
-            if (isset($classVars[strtolower($var)])) {
-                // if the var has a set method
-                if (isset($classMethods['set' . strtolower($var)])) {
-                    // set the var using it's set method
-                    $this->{$classMethods['set' . strtolower($var)]}($value);
-                // otherwise
-                } else {
-                    // just set the var directly
-                    $this->{$classVars[strtolower($var)]} = $value;
+        if ($vars) {
+            foreach ($vars as $var => $value) {
+                $var = $this->underscoreToCamel($var);
+                // if var is a class var
+                if (isset($classVars[strtolower($var)])) {
+                    // if the var has a set method
+                    if (isset($classMethods['set' . strtolower($var)])) {
+                        // set the var using it's set method
+                        $this->{$classMethods['set' . strtolower($var)]}($value);
+                    // otherwise
+                    } else {
+                        // just set the var directly
+                        $this->{$classVars[strtolower($var)]} = $value;
+                    }
                 }
             }
         }
@@ -135,6 +137,10 @@ abstract class DTO {
             }
         }
         return $vars;
+    }
+
+    protected function getReflection() {
+        return $this->reflection;
     }
 
     /**
