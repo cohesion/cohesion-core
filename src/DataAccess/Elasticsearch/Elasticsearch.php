@@ -55,7 +55,7 @@ class Elasticsearch implements Configurable {
         );
         $client = $this->getClient();
         $result = $client->delete($params);
-        if ($result['ok'] || $result['found']) {
+        if ($result['found']) {
             return true;
         } else if ($result['error']) {
             throw new ElasticsearchException("Unable to remove $type index due to Eleasticsearch error: {$result['error']}");
