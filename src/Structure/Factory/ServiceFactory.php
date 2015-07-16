@@ -25,10 +25,10 @@ class ServiceFactory extends AbstractFactory {
     public function __construct(DataAccessFactory $daoFactory, Config $config = null, $user = null) {
         $this->daoFactory = $daoFactory;
         $this->config = $config;
-        if ($config) {
+        if ($config && $config->get(static::UTILITY_CONFIG_SECTION)) {
             $utilConfig = $config->getConfig(static::UTILITY_CONFIG_SECTION);
         } else {
-            $utilConfig = null;
+            $utilConfig = $config;
         }
         $this->utilFactory = new UtilityFactory($utilConfig);
         $this->user = $user;
@@ -120,11 +120,11 @@ class ServiceFactory extends AbstractFactory {
     }
 
     private function getServiceDAO($serviceClass) {
-        $servicePrefix = $this->config ? $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.prefix') : static::DEFAULT_SERVICE_PREFIX;
-        $serviceSuffix = $this->config ? $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.suffix') : static::DEFAULT_SERVICE_SUFFIX;
+        $servicePrefix = $this->config && $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.prefix') ? $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.prefix') : static::DEFAULT_SERVICE_PREFIX;
+        $serviceSuffix = $this->config && $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.suffix') ? $this->config->get(static::SERVICE_CONFIG_SECTION . '.class.suffix') : static::DEFAULT_SERVICE_SUFFIX;
         $name = preg_replace(["/^$servicePrefix/", "/$serviceSuffix$/"], '', $serviceClass);
-        $daoPrefix = $this->config ? $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.prefix') : static::DEFAULT_DATA_ACCESS_PREFIX;
-        $daoSuffix = $this->config ? $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.suffix') : static::DEFAULT_DATA_ACCESS_SUFFIX;
+        $daoPrefix = $this->config && $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.prefix') ? $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.prefix') : static::DEFAULT_DATA_ACCESS_PREFIX;
+        $daoSuffix = $this->config && $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.suffix') ? $this->config->get(static::DATA_ACCESS_CONFIG_SECTION . '.class.suffix') : static::DEFAULT_DATA_ACCESS_SUFFIX;
         $class = $daoPrefix . $name . $daoSuffix;
         if (!class_exists($class)) {
             throw new InvalidClassException("$class does not exist");
