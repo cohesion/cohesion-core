@@ -175,7 +175,7 @@ class MySQL implements Database, Configurable {
                 throw new MySQLQueryException($link->errno . ': ' . $link->error);
             }
         }
-        $dbResult = new MySQLResult($link, $result, $sql);
+        $dbResult = new MySQLResult($link, $result, $sqli);
         if (is_object($result)) {
             $result->free();
         }
