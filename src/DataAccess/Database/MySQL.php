@@ -154,9 +154,9 @@ class MySQL implements Database, Configurable {
                 }
                 $count++;
             }
-            $sqli .= $sql;
+            $sql = $sqli . $sql;
 
-            if (!$statement = $link->prepare($sqli)) {
+            if (!$statement = $link->prepare($sql)) {
                 throw new MySQLStatementException($link->errno . ': ' . $link->error);
             }
             if ($types) {
@@ -175,7 +175,7 @@ class MySQL implements Database, Configurable {
                 throw new MySQLQueryException($link->errno . ': ' . $link->error);
             }
         }
-        $dbResult = new MySQLResult($link, $result, $sqli);
+        $dbResult = new MySQLResult($link, $result, $sql);
         if (is_object($result)) {
             $result->free();
         }
