@@ -1,5 +1,4 @@
 <?php
 namespace Cohesion\Config;
 
-class MissingConfigurationException extends \Exception { }
-
+class MissingConfigurationException extends ConfigurationException { }
