@@ -106,6 +106,19 @@ abstract class DTO {
      * Export protected class parameters as an associative array
      */
     public function getVars($showNulls = false) {
+        return $this->getVarsWithoutCircularReferences($showNulls);
+    }
+
+    /**
+     * Export protected class parameters as an associative array.
+     *
+     * This function will make sure that even if the object has a circular
+     * reference it won't crash the system by calling the `getVars` function.
+     * If there is a circular reference the later one will be left out of the
+     * output
+     */
+    private function getVarsWithoutCircularReferences($showNulls, &$previousDTOs = []) {
+        $previousDTOs[spl_object_hash($this)] = true;
         $classProperties = $this->reflection->getProperties(\ReflectionProperty::IS_PROTECTED);
         $vars = array();
         foreach ($classProperties as $property) {
@@ -113,8 +126,11 @@ abstract class DTO {
                 $var = null;
             // if it's another DTO
             } else if ($this->{$property->name} instanceof DTO) {
-                // Get it's vars
-                $var = $this->{$property->name}->getVars();
+                // If this will cause a circular reference issue just ignore it
+                if (!isset($previousDTOs[spl_object_hash($this->{$property->name})])) {
+                    // Get it's vars
+                    $var = $this->{$property->name}->getVarsWithoutCircularReferences($showNulls, $previousDTOs);
+                }
             // If it's an array of DTOs
             } else if (is_array($this->{$property->name})
                     && count($this->{$property->name}) > 0
@@ -122,7 +138,9 @@ abstract class DTO {
                 $var = array();
                 // Get the vars for each
                 foreach ($this->{$property->name} as $i => $v) {
-                    $var[$i] = $v->getVars();
+                    if (!isset($previousDTOs[spl_object_hash($v)])) {
+                        $var[$i] = $v->getVarsWithoutCircularReferences($showNulls, $previousDTOs);
+                    }
                 }
             // If it's some other kind of object
             } else if (is_object($this->{$property->name}) && method_exists($this->{$property->name}, '__toString')) {
