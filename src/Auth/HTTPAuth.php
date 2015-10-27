@@ -23,7 +23,7 @@ class HTTPAuth extends Auth {
         }
         $errors = array();
         if (!$this->input->required(array('username', 'password'), $errors)) {
-            throw new \UnauthorisedException(implode('. ', $errors));
+            throw new UnauthorisedException(implode('. ', $errors));
         }
         if ($this->validateCredentials($this->input->get('username'), $this->input->get('password'))) {
             $user = $this->userService->getUserByUsername($this->input->get('username'));
