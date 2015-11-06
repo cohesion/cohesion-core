@@ -82,6 +82,29 @@ class FacebookAuth extends HTTPAuth {
         }
     }
 
+    public function enableLongLiveAccess() {
+        if (!$this->token) {
+            throw new AuthException('Must have short live token');
+        }
+        $url = 'https://graph.facebook.com/oauth/access_token?';
+        $query = [
+            'grant_type' => 'fb_exchange_token',
+            'client_id' => $this->appId,
+            'client_secret' => $this->secret,
+            'fb_exchange_token' => $this->token
+        ];
+        $url = $url . http_build_query($query);
+        $response = file_get_contents($url);
+        if (!$response) {
+            throw new AuthException('Unable to create long lived token');
+        }
+        parse_str($response, $params);
+        if (isset($params['access_token'])) {
+            $this->token = $params['access_token'];
+            $this->userService->setFacebookToken($this->token, (int) $params['expires']);
+        }
+    }
+
     public function getToken() {
         if (!$this->token) {
             if ($this->isLoggedIn()) {
