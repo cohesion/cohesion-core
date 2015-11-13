@@ -169,13 +169,14 @@ class MySQL implements Database, Configurable {
                 throw new MySQLExecuteException($link->errno . ': ' . $link->error);
             }
             $result = $statement->get_result();
+            $dbResult = new MySQLResult($link, $result, $sql);
             $statement->close();
         } else {
             if (!($result = $link->query($sql))) {
                 throw new MySQLQueryException($link->errno . ': ' . $link->error);
             }
+            $dbResult = new MySQLResult($link, $result, $sql);
         }
-        $dbResult = new MySQLResult($link, $result, $sql);
         if (is_object($result)) {
             $result->free();
         }
