@@ -41,7 +41,7 @@ class HTTPAuth extends Auth {
         session_destroy();
     }
 
-    protected function setUserLoggedIn($user) {
+    public function setUserLoggedIn($user) {
         $hash = $this->generateHash();
         $this->userService->setAuthHash($user, $hash);
         $_SESSION['user_id'] = $user->getId();
