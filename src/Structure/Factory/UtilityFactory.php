@@ -85,13 +85,9 @@ class UtilityFactory extends AbstractFactory {
                 $values[] = $config;
             } else if ($config->get($parameter->getName()) !== null) {
                 if ($parameter->getClass()) {
-                    if ($parameter->getClass()->isInterface()) {
-                        if ($driver = $config->getConfig($parameter->getName())->get('driver')) {
-                            $driverReflection = new ReflectionClass($driver);
-                            $values[] = $this->getClass($driverReflection, $config->getConfig($parameter->getName()), $parameter->getName());
-                        } else {
-                            throw new MissingConfigurationException("Configuration for interface '{$parameter->getName()}' parameter must include a driver");
-                        }
+                    if ($driver = $config->getConfig($parameter->getName())->get('driver')) {
+                        $driverReflection = new ReflectionClass($driver);
+                        $values[] = $this->getClass($driverReflection, $config->getConfig($parameter->getName()), $parameter->getName());
                     } else {
                         $values[] = $this->getClass($parameter->getClass(), $config->getConfig($parameter->getName()), $parameter->getName());
                     }
