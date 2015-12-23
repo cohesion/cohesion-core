@@ -17,16 +17,35 @@ class HTTPAuth extends Auth {
         $this->input = new Input($_REQUEST ?: array());
     }
 
-    public function login() {
+    public function login(Array $credentials = array()) {
         if ($this->isLoggedIn()) {
             return true;
         }
+        $username = null;
+        $password = null;
         $errors = array();
-        if (!$this->input->required(array('username', 'password'), $errors)) {
-            throw new UnauthorisedException(implode('. ', $errors));
+        if ($credentials) {
+            if (empty($credentials['username'])) {
+                $errors[] = 'Missing username parameter';
+            } else {
+                $username = $credentials['username'];
+            }
+            if (empty($credentials['password'])) {
+                $errors[] = 'Missing password parameter';
+            } else {
+                $password = $credentials['password'];
+            }
+        } else if ($this->input->required(array('username', 'password'), $errors)) {
+            $username = $this->input->get('username');
+            $password = $this->input->get('password');
         }
-        if ($this->validateCredentials($this->input->get('username'), $this->input->get('password'))) {
-            $user = $this->userService->getUserByUsername($this->input->get('username'));
+
+        if ($errors) {
+            throw new \UnauthorisedException(implode('. ', $errors));
+        }
+        
+        if ($this->validateCredentials($username, $password)) {
+            $user = $this->userService->getUserByUsername($username);
             $this->setUserLoggedIn($user);
             return true;
         }
