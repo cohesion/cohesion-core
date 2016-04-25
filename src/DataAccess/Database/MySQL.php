@@ -166,7 +166,7 @@ class MySQL implements Database, Configurable {
                 }
             }
             if (!$statement->execute()) {
-                throw new MySQLExecuteException($link->errno . ': ' . $link->error);
+                throw new MySQLExecuteException($link->errno . ': ' . $link->error, $link->errno);
             }
             $result = $statement->get_result();
             $dbResult = new MySQLResult($link, $result, $sql);
