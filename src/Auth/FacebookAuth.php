@@ -46,7 +46,7 @@ class FacebookAuth extends HTTPAuth {
 
             $response = file_get_contents($token_url);
             $params = null;
-            parse_str($response, $params);
+            $params = json_decode($response, true);
 
             $this->token = $params['access_token'];
 
